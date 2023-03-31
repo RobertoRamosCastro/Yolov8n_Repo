@@ -25,6 +25,15 @@ mask = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\mascara.png')
 # Tracker
 tracker = Sort(max_age=20, min_hits=3, iou_threshold=0.3)
 
+# Creating the line to count objects
+limits = [400,297,673,297] # Values of the mask
+
+# contador para los coches que cruzan la linea
+counter = 0
+
+# lista de id's ya contados
+list_id_counted = []
+
 while True:
     ret, frame = cap.read()
 
@@ -54,40 +63,51 @@ while True:
 
             # Clases de interes
             if classNames[cls] == 'car' or classNames[cls] == 'truck' or classNames[cls]=='motorbike' or classNames[cls]=='bus':
-                if conf > 0.5:
-                    # Mostrar bounding box
-                    cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=5)
-                    # Mostrarlo en texto
-                    '''cvzone.putTextRect(frame,
-                                    f'{classNames[cls]} {conf:.2f} {ID}',
-                                    (max(0,x1), max(35, y1)),
-                                    scale=1,
-                                    thickness=1,
-                                    offset=3) '''
-                    # adding new detections in each loop
-                    currentArray = np.array([x1,y1,x2,y2,conf])
-                    detections = np.vstack((detections, currentArray))
-
+                #if conf > 0.3:
+                # Mostrar bounding box
+                # cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=5)
+                # Mostrarlo en texto
+                '''cvzone.putTextRect(frame,
+                                f'{classNames[cls]} {conf:.2f} {ID}',
+                                (max(0,x1), max(35, y1)),
+                                scale=1,
+                                thickness=1,
+                                offset=3) '''
+                # adding new detections in each loop
+                currentArray = np.array([x1,y1,x2,y2,conf])
+                detections = np.vstack((detections, currentArray))
 
     # update with a list of detections
     resultTracker = tracker.update(detections)
 
+    cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,0,255), 5)
+
     for result in resultTracker:
         x1,y1,x2,y2,id = result
-        x1,y1,x2,y2 = int(x1), int(y1), int(x2), int(y2)
+        x1,y1,x2,y2,id = int(x1), int(y1), int(x2), int(y2), int(id)
         print(result)
         w, h = x2-x1, y2-y1
-        cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255,0,0))
+        cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255, 0, 255))
         cvzone.putTextRect(frame,
-                                    f'{id}',
+                                    f'{id} {classNames[cls]}',
                                     (max(0,x1), max(35, y1)),
                                     scale=1,
                                     thickness=1,
                                     offset=3) 
+        
+        cx, cy =  x1+w//2, y1+h//2
+        cv2.circle(frame, (cx,cy), 5, (255,0,255), cv2.FILLED)
+
+        if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
+            counter+=1
+
+    # Mostar el conteo total
+    cvzone.putTextRect(frame, f'{counter}', (50,50)) 
+        
 
     
     cv2.imshow("Frame", frame)
-    cv2.imshow("ImgRegion", imgRegion)
+    # cv2.imshow("ImgRegion", imgRegion)
 
     # Esperar a que se presione la tecla 'q' para cerrar la ventana y 50 ms entre frames
     key = cv2.waitKey(0)
