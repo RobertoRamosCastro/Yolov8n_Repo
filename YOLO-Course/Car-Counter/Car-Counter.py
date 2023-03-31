@@ -99,12 +99,12 @@ while True:
         cv2.circle(frame, (cx,cy), 5, (255,0,255), cv2.FILLED)
 
         if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
-            counter+=1
+            if id not in list_id_counted:
+                counter+=1
+                list_id_counted.append(id)
 
     # Mostar el conteo total
     cvzone.putTextRect(frame, f'{counter}', (50,50)) 
-        
-
     
     cv2.imshow("Frame", frame)
     # cv2.imshow("ImgRegion", imgRegion)
