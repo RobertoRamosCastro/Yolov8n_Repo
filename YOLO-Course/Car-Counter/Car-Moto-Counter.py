@@ -32,7 +32,8 @@ limits = [400,297,673,297] # Values of the mask
 counter = 0
 
 # lista de id's ya contados
-list_id_counted = []
+list_id_counted_cars = []
+list_id_counted_motos = []
 
 while True:
     ret, frame = cap.read()
@@ -40,19 +41,13 @@ while True:
     if not ret:
         break
 
-    height_frame, width_frame, channels = frame.shape
-
     imgRegion = cv2.bitwise_and(frame, mask) # operacion para extraer la parte que queremos con nuestra mascara
 
-    imgGraphics = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\graphics.png', cv2.IMREAD_UNCHANGED)
-    height_imgGraphics, width_imgGraphics, channels_imgGraphics = imgGraphics.shape
-    print(height_frame,width_frame)
-    print(height_imgGraphics,width_imgGraphics)
-    frame = cvzone.overlayPNG(frame, imgGraphics, (width_frame-width_imgGraphics,height_frame-height_imgGraphics))
-
     results = model(frame, stream=True)
+
     # Para inicializar nuestros tracker
-    detections=np.empty((0,5))
+    detections_cars=np.empty((0,5))
+    detections_motos=np.empty((0,5))
 
     for r in results:
         boxes = r.boxes
@@ -70,7 +65,7 @@ while True:
             # print(conf,classNames[cls])
 
             # Clases de interes
-            if classNames[cls] == 'car' or classNames[cls] == 'truck' or classNames[cls]=='motorbike' or classNames[cls]=='bus':
+            if classNames[cls] == 'car':
                 #if conf > 0.3:
                 # Mostrar bounding box
                 # cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=5)
@@ -82,15 +77,21 @@ while True:
                                 thickness=1,
                                 offset=3) '''
                 # adding new detections in each loop
-                currentArray = np.array([x1,y1,x2,y2,conf])
-                detections = np.vstack((detections, currentArray))
+                currentArray_car = np.array([x1,y1,x2,y2,conf])
+                detections_cars = np.vstack((detections_cars, currentArray_car))
+
+                
+            elif classNames[cls]=='motorbike':
+                currentArray_moto = np.array([x1,y1,x2,y2,conf])
+                detections_motos = np.vstack((detections_motos, currentArray_moto))
 
     # update with a list of detections
-    resultTracker = tracker.update(detections)
+    resultTracker_car = tracker.update(detections_cars)
+    resultTracker_moto = tracker.update(detections_motos)
 
     cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,0,255), 5)
 
-    for result in resultTracker:
+    for result in resultTracker_car:
         x1,y1,x2,y2,id = result
         x1,y1,x2,y2,id = int(x1), int(y1), int(x2), int(y2), int(id)
         # print(x1,y1,x2,y2,id)
@@ -107,15 +108,38 @@ while True:
         cv2.circle(frame, (cx,cy), 5, (255,0,255), cv2.FILLED)
 
         if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
-            if id not in list_id_counted:
+            if id not in list_id_counted_cars:
                 counter+=1
-                list_id_counted.append(id)
+                list_id_counted_cars.append(id)
+                # Cuando detecta uno cambia de color
+                cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,255,0), 5)
+
+    for result in resultTracker_moto:
+        x1,y1,x2,y2,id = result
+        x1,y1,x2,y2,id = int(x1), int(y1), int(x2), int(y2), int(id)
+        # print(x1,y1,x2,y2,id)
+        w, h = x2-x1, y2-y1
+        cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255, 0, 255))
+        cvzone.putTextRect(frame,
+                            f'{id} {classNames[cls]}',
+                            (max(0,x1), max(35, y1)),
+                            scale=1,
+                            thickness=1,
+                            offset=3) 
+        
+        cx, cy =  x1+w//2, y1+h//2
+        cv2.circle(frame, (cx,cy), 5, (255,0,255), cv2.FILLED)
+
+        if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
+            if id not in list_id_counted_motos:
+                counter+=1
+                list_id_counted_motos.append(id)
                 # Cuando detecta uno cambia de color
                 cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,255,0), 5)
 
     # Mostar el conteo total
-    # cvzone.putTextRect(frame, f'Counts: {len(list_id_counted)}', (50,50)) 
-    cv2.putText(frame, str(len(list_id_counted)), (width_frame-200,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (50,50,255), 8)
+    cvzone.putTextRect(frame, f'Counts: {len(list_id_counted_cars)}', (50,50)) 
+    cvzone.putTextRect(frame, f'Counts: {len(list_id_counted_motos)}', (150,150)) 
     
     cv2.imshow("Frame", frame)
     # cv2.imshow("ImgRegion", imgRegion)
