@@ -1,10 +1,9 @@
 from ultralytics import YOLO
 import cv2
 import cvzone
-import math
 from sort import *  
 
-model = YOLO(r'D:\Yolov8n_Repo\YOLO-Course\chapter5-runningYolo\YOLO-Weights\yolov8n.pt')
+model = YOLO(r'D:\Yolov8n_Repo\YOLO-Course\chapter5-runningYolo\YOLO-Weights\yolov8l.pt')
 
 cap = cv2.VideoCapture(r'D:\Yolov8n_Repo\YOLO-Course\Videos\cars.mp4')
 
@@ -43,12 +42,6 @@ while True:
     height_frame, width_frame, channels = frame.shape
 
     imgRegion = cv2.bitwise_and(frame, mask) # operacion para extraer la parte que queremos con nuestra mascara
-
-    imgGraphics = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\graphics.png', cv2.IMREAD_UNCHANGED)
-    height_imgGraphics, width_imgGraphics, channels_imgGraphics = imgGraphics.shape
-    print(height_frame,width_frame)
-    print(height_imgGraphics,width_imgGraphics)
-    frame = cvzone.overlayPNG(frame, imgGraphics, (width_frame-width_imgGraphics,height_frame-height_imgGraphics))
 
     results = model(frame, stream=True)
     # Para inicializar nuestros tracker
@@ -115,7 +108,8 @@ while True:
 
     # Mostar el conteo total
     # cvzone.putTextRect(frame, f'Counts: {len(list_id_counted)}', (50,50)) 
-    cv2.putText(frame, str(len(list_id_counted)), (width_frame-200,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (50,50,255), 8)
+    cv2.putText(frame, str(len(list_id_counted)), (width_frame-200,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 8)
+    print(counter)
     
     cv2.imshow("Frame", frame)
     # cv2.imshow("ImgRegion", imgRegion)
