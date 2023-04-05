@@ -1,7 +1,6 @@
 from ultralytics import YOLO
 import cv2
 import cvzone
-import math
 from sort import *  
 
 model = YOLO(r'D:\Yolov8n_Repo\YOLO-Course\chapter5-runningYolo\YOLO-Weights\yolov8l.pt')
@@ -88,7 +87,7 @@ while True:
     for result in resultTracker:
         x1,y1,x2,y2,id = result[0:5]
         c = int(result[-1])
-        x1,y1,x2,y2,id = [int(val) for val in result[0:5] ]
+        x1,y1,x2,y2,id = [int(val) for val in result[0:5]]
         w, h = x2-x1, y2-y1
         cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255, 0, 255))
         cvzone.putTextRect(frame,

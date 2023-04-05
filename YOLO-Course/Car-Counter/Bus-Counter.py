@@ -63,7 +63,7 @@ while True:
             # print(conf,classNames[cls])
 
             # Clases de interes
-            if classNames[cls]=='car':
+            if classNames[cls]=='bus':
                 if conf > 0.3:
                 # Mostrar bounding box
                 # cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=5)
@@ -99,17 +99,16 @@ while True:
         cx, cy =  x1+w//2, y1+h//2
         cv2.circle(frame, (cx,cy), 5, (255,0,255), cv2.FILLED)
 
-        if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
+        if limits[0] < cx < limits[2] and limits[1] - 40 < cy < limits[1] + 40:
             if id not in list_id_counted:
-                counter+=1
+                #counter+=1
                 list_id_counted.append(id)
                 # Cuando detecta uno cambia de color
                 cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,255,0), 5)
 
     # Mostar el conteo total
     # cvzone.putTextRect(frame, f'Counts: {len(list_id_counted)}', (50,50)) 
-    cv2.putText(frame, str(len(list_id_counted)), (width_frame-200,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 8)
-    print(counter)
+    cv2.putText(frame, f'Buses: {str(len(list_id_counted))}', (width_frame-400,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 5)
     
     cv2.imshow("Frame", frame)
     # cv2.imshow("ImgRegion", imgRegion)
@@ -123,10 +122,11 @@ while True:
 with open('tabla.csv', 'r') as f:  
     counters = f.read()
     print(counters)
-    if 'Coche' in counters:
+    if 'Bus' in counters:
         pass
     else: 
         with open('tabla.csv', 'a') as f:
-            f.write('Coches: ' + str(len(list_id_counted)) + '\n')
+            f.write('Buses: ' + str(len(list_id_counted)) + '\n')
+
 
 

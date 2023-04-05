@@ -63,17 +63,7 @@ while True:
             # print(conf,classNames[cls])
 
             # Clases de interes
-            if classNames[cls]=='car':
-                if conf > 0.3:
-                # Mostrar bounding box
-                # cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=5)
-                # Mostrarlo en texto
-                    '''cvzone.putTextRect(frame,
-                                    f'{classNames[cls]} {conf:.2f} {ID}',
-                                    (max(0,x1), max(35, y1)),
-                                    scale=1,
-                                    thickness=1,
-                                    offset=3) '''
+            if classNames[cls]=='motorbike':
                 # adding new detections in each loop
                 currentArray = np.array([x1,y1,x2,y2,conf])
                 detections = np.vstack((detections, currentArray))
@@ -101,21 +91,20 @@ while True:
 
         if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
             if id not in list_id_counted:
-                counter+=1
+                #counter+=1
                 list_id_counted.append(id)
                 # Cuando detecta uno cambia de color
                 cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,255,0), 5)
 
     # Mostar el conteo total
     # cvzone.putTextRect(frame, f'Counts: {len(list_id_counted)}', (50,50)) 
-    cv2.putText(frame, str(len(list_id_counted)), (width_frame-200,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 8)
-    print(counter)
+    cv2.putText(frame, f'Motos: {str(len(list_id_counted))}', (width_frame-400,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 5)
     
     cv2.imshow("Frame", frame)
     # cv2.imshow("ImgRegion", imgRegion)
 
     # Esperar a que se presione la tecla 'q' para cerrar la ventana
-    key = cv2.waitKey(1)
+    key = cv2.waitKey(0)
     if key == ord('q'):
         cap.release()
         cv2.destroyAllWindows()
@@ -123,10 +112,12 @@ while True:
 with open('tabla.csv', 'r') as f:  
     counters = f.read()
     print(counters)
-    if 'Coche' in counters:
+    if 'Moto' in counters:
         pass
     else: 
         with open('tabla.csv', 'a') as f:
-            f.write('Coches: ' + str(len(list_id_counted)) + '\n')
+            f.write('Motos: ' + str(len(list_id_counted)) + '\n')
+
+
 
 
