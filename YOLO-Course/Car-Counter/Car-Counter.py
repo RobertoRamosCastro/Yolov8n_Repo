@@ -116,7 +116,7 @@ while True:
     # cv2.imshow("ImgRegion", imgRegion)
 
     # Esperar a que se presione la tecla 'q' para cerrar la ventana
-    key = cv2.waitKey(1)
+    key = cv2.waitKey(0)
     if key == ord('q'):
         cap.release()
         cv2.destroyAllWindows()
