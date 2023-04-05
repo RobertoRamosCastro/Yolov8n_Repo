@@ -2,6 +2,7 @@ from ultralytics import YOLO
 import cv2
 import cvzone
 from sort import *  
+from Guardar_Resultados import *
 
 model = YOLO(r'D:\Yolov8n_Repo\YOLO-Course\chapter5-runningYolo\YOLO-Weights\yolov8l.pt')
 
@@ -19,7 +20,7 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "teddy bear", "hair drier", "toothbrush"
               ]
 
-mask = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\mascara.png')
+#mask = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\Imagenes\mascara.png')
 
 # Tracker
 tracker = Sort(max_age=20, min_hits=3, iou_threshold=0.3)
@@ -41,7 +42,7 @@ while True:
 
     height_frame, width_frame, channels = frame.shape
 
-    imgRegion = cv2.bitwise_and(frame, mask) # operacion para extraer la parte que queremos con nuestra mascara
+    #imgRegion = cv2.bitwise_and(frame, mask) # operacion para extraer la parte que queremos con nuestra mascara
 
     results = model(frame, stream=True)
     # Para inicializar nuestros tracker
@@ -106,9 +107,10 @@ while True:
                 # Cuando detecta uno cambia de color
                 cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,255,0), 5)
 
+    conteo_total = len(list_id_counted)
     # Mostar el conteo total
     # cvzone.putTextRect(frame, f'Counts: {len(list_id_counted)}', (50,50)) 
-    cv2.putText(frame, f'Buses: {str(len(list_id_counted))}', (width_frame-400,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 5)
+    cv2.putText(frame, f'Buses: {str(conteo_total)}', (width_frame-400,height_frame-66), cv2.FONT_HERSHEY_PLAIN, 5, (255,255,255), 5)
     
     cv2.imshow("Frame", frame)
     # cv2.imshow("ImgRegion", imgRegion)
@@ -119,14 +121,8 @@ while True:
         cap.release()
         cv2.destroyAllWindows()
 
-with open('tabla.csv', 'r') as f:  
-    counters = f.read()
-    print(counters)
-    if 'Bus' in counters:
-        pass
-    else: 
-        with open('tabla.csv', 'a') as f:
-            f.write('Buses: ' + str(len(list_id_counted)) + '\n')
+crear_Tabla_csv('Buses',conteo_total)
+sumar_clases_tabla()
 
 
 
