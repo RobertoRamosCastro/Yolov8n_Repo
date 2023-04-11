@@ -77,7 +77,7 @@ while True:
                                     color=(0, 255, 0)
                                     )'''
                 # adding new detections in each loop
-                array_clases = np.vstack((cls))
+                array_clases = np.vstack((array_clases,cls))
                 currentArray = np.array([x1,y1,x2,y2,cls])
                 detections = np.vstack((detections, currentArray))
 
