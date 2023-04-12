@@ -1,14 +1,33 @@
 import cv2
 import numpy as np
+import urllib.request
+
+'''# Descargar el archivo .cfg de YOLOv3 desde GitHub
+url_cfg = 'https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
+response_cfg = urllib.request.urlopen(url_cfg)
+text_cfg = response_cfg.read().decode('utf-8')
+with open('yolov3.cfg', 'w') as f:
+    f.write(text_cfg)
+
+# Descargar el archivo de pesos de YOLOv3 desde GitHub
+url_weights = 'https://pjreddie.com/media/files/yolov3.weights'
+response_weights = urllib.request.urlopen(url_weights)
+weights = np.array(bytearray(response_weights.read()), dtype=np.uint8)
+with open('yolov3.weights', 'wb') as f:
+    f.write(weights)
+
+# Descargar archivo con coco names
+url = "https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names"
+filename = "coco.names"
+urllib.request.urlretrieve(url, filename)'''
+
 
 # Cargar modelo de detección de objetos
-net = cv2.dnn.readNetFromDarknet('yolov3.cfg', 'yolov3.weights')
+net = cv2.dnn.readNetFromDarknet(r'D:\Yolov8n_Repo\YOLO-Course\MOC\yolov3.cfg', r'D:\Yolov8n_Repo\YOLO-Course\MOC\yolov3.weights')
 
 # Cargar clases
-with open('coco.names', 'r') as f:
+with open(r'D:\Yolov8n_Repo\YOLO-Course\MOC\coco.names', 'r') as f:
     classes = [line.strip() for line in f.readlines()]
-
-print(classes)
 
 # Configurar líneas de conteo
 line_positions = [(0, 300), (800, 300)] # posición de las dos líneas
@@ -19,7 +38,7 @@ line_color = (0, 255, 0)
 object_counts = {class_name: 0 for class_name in classes}
 
 # Inicializar objeto de seguimiento de objetos
-tracker = cv2.MultiTracker_create()
+tracker = cv2.legacy.MultiTracker_create()
 
 # Capturar video de la cámara
 cap = cv2.VideoCapture(r'D:\Yolov8n_Repo\YOLO-Course\Videos\cars.mp4')
@@ -73,7 +92,7 @@ while True:
                 class_name = classes[class_id]
                 object_counts[class_name] += 1
     
-    # Mostrar frame con resultados
+       # Mostrar frame con resultados
     cv2.imshow('Object Counting', frame)
     
     # Salir si se presiona la tecla 'q'
@@ -88,3 +107,5 @@ cv2.destroyAllWindows()
 print('Object counts:')
 for class_name, count in object_counts.items():
     print(f'{class_name}: {count}')
+
+
