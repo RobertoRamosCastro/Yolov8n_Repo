@@ -19,7 +19,7 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "teddy bear", "hair drier", "toothbrush"
               ]
 
-mask = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\mascara.png')
+#mask = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\mascara.png')
 
 # Tracker
 tracker = Sort(max_age=20, min_hits=3, iou_threshold=0.3)
@@ -45,7 +45,6 @@ while True:
     results = model(frame, stream=True)
     # Para inicializar nuestros tracker
     detections=np.empty((0,5))
-    array_clases = np.empty((0,1))
 
     for r in results:
         boxes = r.boxes
@@ -77,26 +76,23 @@ while True:
                                     color=(0, 255, 0)
                                     )'''
                 # adding new detections in each loop
-                array_clases = np.vstack((array_clases,cls))
                 currentArray = np.array([x1,y1,x2,y2,cls])
                 detections = np.vstack((detections, currentArray))
 
     # update with a list of detections
-    print(array_clases)
     resultTracker = tracker.update(detections)
-    
 
     cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,0,255), 5)
 
     for result in resultTracker:
-        print(result)
-        x1,y1,x2,y2,id = result[0:5]
+        #print('result',result)
+        x1,y1,x2,y2,id= result[0:5]
         c = int(result[-1])
         x1,y1,x2,y2,id = [int(val) for val in result[0:5]]
         w, h = x2-x1, y2-y1
         cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255, 0, 255))
         cvzone.putTextRect(frame,
-                            f'{id} {classNames[c]}',
+                            f'{id}',
                             (max(0,x1), max(35, y1)),
                             scale=1,
                             thickness=1,
@@ -107,7 +103,6 @@ while True:
 
         if limits[0] < cx < limits[2] and limits[1] - 20 < cy < limits[1] + 20:
             if id not in list_id_counted:
-                print(classNames[c])
                 if classNames[c] == 'car':
                     counter_cars+=1
                 elif classNames[c] == 'motorbike':

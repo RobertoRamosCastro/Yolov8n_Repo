@@ -206,6 +206,8 @@ class Sort(object):
     self.iou_threshold = iou_threshold
     self.trackers = []
     self.frame_count = 0
+    #self.listado_clases = np.empty((1,0))
+    #self.listado_clases = [] y si creo una lista y se lo voy añadiendo asi luego coincide el ID con la pos en la lista de la clase??
 
   def update(self, dets=np.empty((0, 5))):
     """
@@ -213,9 +215,21 @@ class Sort(object):
       dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
     Requires: this method must be called once for each frame even with empty detections (use np.empty((0, 5)) for frames without detections).
     Returns the a similar array, where the last column is the object ID.
-
     NOTE: The number of objects returned may differ from the number of detections provided.
     """
+
+    listado_clases = np.array([])
+    # Extraer de cada deteccion la clase
+    for i in range(len(dets)):
+      for j in range(len(dets)):
+        if j == 4:
+          value = int(dets[i][j])
+          listado_clases = np.append(listado_clases, value)
+          #print('clases de las detecciones SORT',int(dets[i][j]))
+    # Creando un array vertical para añadirselo a ret
+    lista_vertical = listado_clases.reshape(-1,1)
+    print('Listado vertical shape', lista_vertical.shape)
+
     self.frame_count += 1
     # get predicted locations from existing trackers.
     trks = np.zeros((len(self.trackers), 5))
@@ -224,11 +238,11 @@ class Sort(object):
     for t, trk in enumerate(trks):
       pos = self.trackers[t].predict()[0]
       trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
-      if np.any(np.isnan(pos)):
+      if np.any(np.isnan(pos)): # si algun tracker produce valors NaN añade su indice para eliminarlo
         to_del.append(t)
-    trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
+    trks = np.ma.compress_rows(np.ma.masked_invalid(trks)) # limpia la matriz trks de valores NaN
     for t in reversed(to_del):
-      self.trackers.pop(t)
+      self.trackers.pop(t) # elimina de la lista de trackers los que tenian un valor NaN
     matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,trks, self.iou_threshold)
 
     # update matched trackers with assigned detections
@@ -242,15 +256,23 @@ class Sort(object):
     i = len(self.trackers)
     for trk in reversed(self.trackers):
         d = trk.get_state()[0]
-        if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
-          ret.append(np.concatenate((d,[trk.id+1], dets[-1])).reshape(1,-1)) # +1 as MOT benchmark requires positive
+        if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):          
+          ret.append(np.concatenate((d,[trk.id+1])).reshape(1,-1)) # +1 as MOT benchmark requires positive
         i -= 1
         # remove dead tracklet
         if(trk.time_since_update > self.max_age):
           self.trackers.pop(i)
+    for indice, _ in enumerate(ret):
+      ret2 = np.append(ret[indice], int(listado_clases[indice]))
+      print('ret2' ,ret2)
+      #print('ret[indice]',ret[indice], '\nret type', type(ret[indice]))
+      #print('type_clases', type(listado_clases[indice]))
+      #ret[indice].concatenate(listado_clases[indice])
+
     if(len(ret)>0):
       return np.concatenate(ret)
     return np.empty((0,5))
+
 
 def parse_args():
     """Parse input arguments."""
