@@ -85,14 +85,14 @@ while True:
     cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,0,255), 5)
 
     for result in resultTracker:
-        #print('result',result)
+        print('result',result)
         x1,y1,x2,y2,id= result[0:5]
         c = int(result[-1])
         x1,y1,x2,y2,id = [int(val) for val in result[0:5]]
         w, h = x2-x1, y2-y1
         cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255, 0, 255))
         cvzone.putTextRect(frame,
-                            f'{id}',
+                            f'{id} {classNames[c]}',
                             (max(0,x1), max(35, y1)),
                             scale=1,
                             thickness=1,

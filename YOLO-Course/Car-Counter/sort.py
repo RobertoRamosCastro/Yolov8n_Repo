@@ -219,6 +219,7 @@ class Sort(object):
     """
 
     listado_clases = np.array([])
+    lista_de_rets = []
     # Extraer de cada deteccion la clase
     for i in range(len(dets)):
       for j in range(len(dets)):
@@ -228,7 +229,9 @@ class Sort(object):
           #print('clases de las detecciones SORT',int(dets[i][j]))
     # Creando un array vertical para añadirselo a ret
     lista_vertical = listado_clases.reshape(-1,1)
-    print('Listado vertical shape', lista_vertical.shape)
+    #print('Listado vertical shape', lista_vertical.shape)
+
+    print(dets[:10])
 
     self.frame_count += 1
     # get predicted locations from existing trackers.
@@ -262,15 +265,15 @@ class Sort(object):
         # remove dead tracklet
         if(trk.time_since_update > self.max_age):
           self.trackers.pop(i)
+
+    print(ret[:10])
+
     for indice, _ in enumerate(ret):
       ret2 = np.append(ret[indice], int(listado_clases[indice]))
-      print('ret2' ,ret2)
-      #print('ret[indice]',ret[indice], '\nret type', type(ret[indice]))
-      #print('type_clases', type(listado_clases[indice]))
-      #ret[indice].concatenate(listado_clases[indice])
+      lista_de_rets.append(ret2)
 
     if(len(ret)>0):
-      return np.concatenate(ret)
+      return lista_de_rets
     return np.empty((0,5))
 
 
