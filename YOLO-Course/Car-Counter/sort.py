@@ -218,22 +218,21 @@ class Sort(object):
     NOTE: The number of objects returned may differ from the number of detections provided.
     """
 
-    listado_clases = np.array([])
-    lista_de_rets = []
+
+    '''listado_clases = np.array([])
     # Extraer de cada deteccion la clase
     for i in range(len(dets)):
       for j in range(len(dets)):
         if j == 4:
           value = int(dets[i][j])
-          listado_clases = np.append(listado_clases, value)
-          #print('clases de las detecciones SORT',int(dets[i][j]))
-    # Creando un array vertical para añadirselo a ret
-    lista_vertical = listado_clases.reshape(-1,1)
-    #print('Listado vertical shape', lista_vertical.shape)
-
-    print(dets[:10])
+          listado_clases = np.append(listado_clases, value)'''
+    
+    lista_dets_con_ID = []
 
     self.frame_count += 1
+
+    print('frame', self.frame_count)
+
     # get predicted locations from existing trackers.
     trks = np.zeros((len(self.trackers), 5))
     to_del = []
@@ -266,16 +265,32 @@ class Sort(object):
         if(trk.time_since_update > self.max_age):
           self.trackers.pop(i)
 
-    print(ret[:10])
-
-    for indice, _ in enumerate(ret):
+    '''for indice, _ in enumerate(ret):
       ret2 = np.append(ret[indice], int(listado_clases[indice]))
-      lista_de_rets.append(ret2)
+      lista_de_rets.append(ret2)'''
+
+    for indx_floats, _ in enumerate(ret):
+      ret[indx_floats][0][0] = round(ret[indx_floats][0][0])
+      ret[indx_floats][0][1] = round(ret[indx_floats][0][1])
+      ret[indx_floats][0][2] = round(ret[indx_floats][0][2])
+      ret[indx_floats][0][3] = round(ret[indx_floats][0][3])
+
+    print(dets)
+    print('rets2', ret)
+
+    for indx in range(len(ret)):
+      for jndx in range(len(dets)):
+        if ret[indx][0][0] == dets[jndx][0] and ret[indx][0][1] == dets[jndx][1] and \
+           ret[indx][0][2] == dets[jndx][2] and ret[indx][0][3] == dets[jndx][3]: 
+          dets2 = np.append(dets[jndx], ret[indx][0][4])
+          lista_dets_con_ID.append(dets2)
+          #print('PRIMERO RET', ret[indx][0][:4], 'DESPUES DETS', dets[jndx][:4])
+
+    print('new dets', lista_dets_con_ID)
 
     if(len(ret)>0):
-      return lista_de_rets
+      return lista_dets_con_ID
     return np.empty((0,5))
-
 
 def parse_args():
     """Parse input arguments."""
