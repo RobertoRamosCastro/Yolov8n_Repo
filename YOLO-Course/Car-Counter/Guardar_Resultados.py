@@ -1,6 +1,6 @@
 import re
 
-nombre_archivo = 'tabla_jorge.csv'
+nombre_archivo = 'tabla_resultados.csv'
 
 def crear_Tabla_csv(clase_vehiculo, len_list_id):
     try:

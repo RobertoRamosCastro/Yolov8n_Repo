@@ -69,12 +69,14 @@ def convert_bbox_to_z(bbox):
     [x,y,s,r] where x,y is the centre of the box and s is the scale/area and r is
     the aspect ratio
   """
+  #print('bbox',bbox)
   w = bbox[2] - bbox[0]
   h = bbox[3] - bbox[1]
   x = bbox[0] + w/2.
   y = bbox[1] + h/2.
   s = w * h    #scale is just area
   r = w / float(h)
+  #return np.array([x, y, s, r]).reshape((4, 1)), bbox[4]
   return np.array([x, y, s, r]).reshape((4, 1))
 
 
@@ -83,9 +85,14 @@ def convert_x_to_bbox(x,score=None):
   Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
     [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right
   """
+  #print('x',x)
   w = np.sqrt(x[2] * x[3])
   h = x[2] / w
+
+  #print('x_modificada', np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.]).reshape((1,4)))
+
   if(score==None):
+    #return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2., np.array([classe_from_fk])]).reshape((1,5))
     return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.]).reshape((1,4))
   else:
     return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.,score]).reshape((1,5))
@@ -100,6 +107,7 @@ class KalmanBoxTracker(object):
     """
     Initialises a tracker using initial bounding box.
     """
+    #print('bbox_init kf',bbox)
     #define constant velocity model
     self.kf = KalmanFilter(dim_x=7, dim_z=4) 
     self.kf.F = np.array([[1,0,0,0,1,0,0],[0,1,0,0,0,1,0],[0,0,1,0,0,0,1],[0,0,0,1,0,0,0],  [0,0,0,0,1,0,0],[0,0,0,0,0,1,0],[0,0,0,0,0,0,1]])
@@ -112,6 +120,11 @@ class KalmanBoxTracker(object):
     self.kf.Q[4:,4:] *= 0.01
 
     self.kf.x[:4] = convert_bbox_to_z(bbox)
+    #get_bbox_and_class = convert_bbox_to_z(bbox)
+    #self.kf.x = get_bbox_and_class[:4]
+    #print('get_bbox4',get_bbox_and_class_4, '\nget_bbox_class', )
+    #print(self.kf.x)
+    #self.kf_class = get_bbox_and_class[1]
     self.time_since_update = 0
     self.id = KalmanBoxTracker.count
     KalmanBoxTracker.count += 1
@@ -119,6 +132,8 @@ class KalmanBoxTracker(object):
     self.hits = 0
     self.hit_streak = 0
     self.age = 0
+    self.cls = int(bbox[-1])
+    #print('self.cls',self.cls)
 
   def update(self,bbox):
     """
@@ -141,14 +156,21 @@ class KalmanBoxTracker(object):
     if(self.time_since_update>0):
       self.hit_streak = 0
     self.time_since_update += 1
+    #self.history.append(convert_x_to_bbox(self.kf.x, self.kf_class))
     self.history.append(convert_x_to_bbox(self.kf.x))
+    #print('self.history', self.history)
     return self.history[-1]
 
   def get_state(self):
     """
     Returns the current bounding box estimate.
     """
-    return convert_x_to_bbox(self.kf.x)
+    #print('convert_x_to_bbox(self.kf.x)',convert_x_to_bbox(self.kf.x)) #convert_x_to_bbox(self.kf.x, self.kf_class)
+    kf_x_cls = convert_x_to_bbox(self.kf.x)
+    return np.append(kf_x_cls, self.cls)
+  
+  '''def get_state_class(self):
+    return self.kf_class'''
 
 
 def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
@@ -206,6 +228,7 @@ class Sort(object):
     self.iou_threshold = iou_threshold
     self.trackers = []
     self.frame_count = 0
+    #self.trk_ind = 0
     #self.listado_clases = np.empty((1,0))
     #self.listado_clases = [] y si creo una lista y se lo voy añadiendo asi luego coincide el ID con la pos en la lista de la clase??
 
@@ -232,6 +255,7 @@ class Sort(object):
     self.frame_count += 1
 
     print('frame', self.frame_count)
+    #print('len self.trackers', self.trackers)
 
     # get predicted locations from existing trackers.
     trks = np.zeros((len(self.trackers), 5))
@@ -242,13 +266,16 @@ class Sort(object):
       trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
       if np.any(np.isnan(pos)): # si algun tracker produce valors NaN añade su indice para eliminarlo
         to_del.append(t)
+    # creo que trks son los valores de las predicciones
     trks = np.ma.compress_rows(np.ma.masked_invalid(trks)) # limpia la matriz trks de valores NaN
+    #print(len(trks),'\ntrks', trks)
     for t in reversed(to_del):
       self.trackers.pop(t) # elimina de la lista de trackers los que tenian un valor NaN
     matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,trks, self.iou_threshold)
 
     # update matched trackers with assigned detections
     for m in matched:
+      #print('self.trackers[m[1]]', self.trackers[m[1]])
       self.trackers[m[1]].update(dets[m[0], :])
 
     # create and initialise new trackers for unmatched detections
@@ -257,8 +284,10 @@ class Sort(object):
         self.trackers.append(trk)
     i = len(self.trackers)
     for trk in reversed(self.trackers):
-        d = trk.get_state()[0]
-        if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):          
+        #d = trk.get_state()[0]
+        d = trk.get_state()
+        #print('d',d)
+        if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
           ret.append(np.concatenate((d,[trk.id+1])).reshape(1,-1)) # +1 as MOT benchmark requires positive
         i -= 1
         # remove dead tracklet
@@ -269,27 +298,27 @@ class Sort(object):
       ret2 = np.append(ret[indice], int(listado_clases[indice]))
       lista_de_rets.append(ret2)'''
 
-    for indx_floats, _ in enumerate(ret):
+    '''for indx_floats, _ in enumerate(ret):
       ret[indx_floats][0][0] = round(ret[indx_floats][0][0])
       ret[indx_floats][0][1] = round(ret[indx_floats][0][1])
       ret[indx_floats][0][2] = round(ret[indx_floats][0][2])
-      ret[indx_floats][0][3] = round(ret[indx_floats][0][3])
+      ret[indx_floats][0][3] = round(ret[indx_floats][0][3])'''
 
-    print(dets)
-    print('rets2', ret)
+    #print(len(dets),'\ndets',dets)
+    #print('rets', ret)
 
-    for indx in range(len(ret)):
+    '''for indx in range(len(ret)):
       for jndx in range(len(dets)):
         if ret[indx][0][0] == dets[jndx][0] and ret[indx][0][1] == dets[jndx][1] and \
            ret[indx][0][2] == dets[jndx][2] and ret[indx][0][3] == dets[jndx][3]: 
           dets2 = np.append(dets[jndx], ret[indx][0][4])
-          lista_dets_con_ID.append(dets2)
+          lista_dets_con_ID.append(dets2)'''
           #print('PRIMERO RET', ret[indx][0][:4], 'DESPUES DETS', dets[jndx][:4])
 
-    print('new dets', lista_dets_con_ID)
+    #print('new dets', lista_dets_con_ID)
 
     if(len(ret)>0):
-      return lista_dets_con_ID
+      return np.concatenate(ret)
     return np.empty((0,5))
 
 def parse_args():

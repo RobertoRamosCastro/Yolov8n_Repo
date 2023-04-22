@@ -2,10 +2,13 @@ from ultralytics import YOLO
 import cv2
 import cvzone
 from sort import *  
+from Save_Results_MOC import *
 
 model = YOLO(r'D:\Yolov8n_Repo\YOLO-Course\chapter5-runningYolo\YOLO-Weights\yolov8l.pt')
 
 cap = cv2.VideoCapture(r'D:\Yolov8n_Repo\YOLO-Course\Videos\cars.mp4')
+#cap = cv2.VideoCapture(r'D:\Yolov8n_Repo\YOLO-Course\Videos\test3.mp4')
+
 
 classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
               "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
@@ -19,30 +22,41 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "teddy bear", "hair drier", "toothbrush"
               ]
 
-#mask = cv2.imread(r'D:\Yolov8n_Repo\YOLO-Course\Car-Counter\mascara.png')
+#deepsort = DeepSort(model_path=r"D:\Yolov8n_Repo\YOLO-Course\yolov8_deepsort_tracking\YOLOv8-DeepSORT-Object-Tracking\ultralytics\yolo\v8\detect\deep_sort_pytorch\deep_sort\deep\checkpoint\ckpt.t7")
 
+    
 # Tracker
 tracker = Sort(max_age=20, min_hits=3, iou_threshold=0.3)
 
+# Objetos permitidos
+allowed_objects = ['truck', 'car', 'bus', 'motorbike']
+
 # Creating the line to count objects
 limits = [400,297,673,297] # Values of the mask
+#limits = [220,450,600,450] #x1,y1,x2,y2 -- (0,0) top left 
 
 # contador para los coches que cruzan la linea
 counter_cars = 0
 counter_mb = 0
-counter_bus = 0
-counter_truck = 0
+counter_pesados = 0
+dict_with_results = {}
 
 # lista de id's ya contados
 list_id_counted = []
+outputs = []
+oids = []
+bboxes = []
+confidences = []
 
 while True:
     ret, frame = cap.read()
+    #print('frame.shape',frame.shape)
 
     if not ret:
         break
 
     results = model(frame, stream=True)
+
     # Para inicializar nuestros tracker
     detections=np.empty((0,5))
 
@@ -63,7 +77,7 @@ while True:
             # print(conf,classNames[cls])
 
             # Clases de interes
-            if classNames[cls] == 'car' or classNames[cls] == 'truck' or classNames[cls]=='motorbike' or classNames[cls]=='bus':
+            if classNames[cls] in allowed_objects:
                 if conf > 0.3:
                 # Mostrar bounding box
                 # cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=5)
@@ -77,19 +91,24 @@ while True:
                                 color=(0, 255, 0)
                                 )'''
                 # adding new detections in each loop
+                '''bbox = [x1,y1,x2,y2]
+                bboxes.append(bbox)
+                oids.append(cls)
+                confidences.append(conf)'''
                 currentArray = np.array([x1,y1,x2,y2,cls])
                 detections = np.vstack((detections, currentArray))
 
+    #print('dets', detections)
     # update with a list of detections
     resultTracker = tracker.update(detections)
+    #outputs = deepsort.update(bbox_xywh=bboxes, confidences=confidences, oids=oids, ori_img=frame)
 
-    cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,0,255), 5)
+    cv2.line(frame, (limits[0],limits[1]),(limits[2]  ,limits[3]), (0,0,255), 5)
 
     for result in resultTracker:
         #print('result',result)
-        #x1,y1,x2,y2,c,id= result
-        #id = int(result[-1])
-        x1,y1,x2,y2,c,id = [int(val) for val in result]
+        x1,y1,x2,y2,c,id= [int(val) for val in result]
+        #x1,y1,x2,y2,id= [int(val) for val in result]
         w, h = x2-x1, y2-y1
         cvzone.cornerRect(frame, bbox=(x1,y1,w,h), l=15, t=2, rt=2, colorR=(255, 0, 255))
         cvzone.putTextRect(frame,
@@ -108,27 +127,28 @@ while True:
                     counter_cars+=1
                 elif classNames[c] == 'motorbike':
                     counter_mb+=1    
-                elif classNames[c] == 'bus':
-                    counter_bus+=1
-                elif classNames[c] == 'truck':
-                    counter_truck+=1    
+                elif classNames[c] == 'bus' or classNames[c] == 'truck':
+                    counter_pesados +=1
                 list_id_counted.append(id)
                 # Cuando detecta uno cambia de color
                 cv2.line(frame, (limits[0],limits[1]),(limits[2],limits[3]), (0,255,0), 5)
 
     # Mostar el conteo total
-    cv2.putText(frame, f'Car Counter: {counter_cars}', (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    cv2.putText(frame, f'Motorbike Counter: {counter_mb}', (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    cv2.putText(frame, f'Bus Counter: {counter_bus}', (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    cv2.putText(frame, f'Truck Counter: {counter_truck}', (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(frame, f'Coches: {counter_cars}', (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    dict_with_results['Coches'] = counter_cars
+    cv2.putText(frame, f'Veh.Ligeros: {counter_mb}', (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    dict_with_results['Veh.Ligeros'] = counter_mb
+    cv2.putText(frame, f'Veh.Pesados: {counter_pesados}', (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    dict_with_results['Veh.Pesados'] = counter_pesados
     
     cv2.imshow("Frame", frame)
 
     # Esperar a que se presione la tecla 'q' para cerrar la ventana
-    key = cv2.waitKey(0)
+    key = cv2.waitKey(1)
     if key == ord('q'):
         cap.release()
         cv2.destroyAllWindows()
 
+crear_Tabla_csv(dict_with_results)
 
 
