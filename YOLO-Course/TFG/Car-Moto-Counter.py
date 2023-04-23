@@ -22,7 +22,7 @@ allowed_objects = ['truck', 'car', 'bus', 'motorbike']
 
 # Creating the line to count objects
 limits = [400,297,673,297] #x1,y1,x2,y2 -- (0,0) top left 
-#limits = [220,450,600,450] 
+#limits = [220,450,600,450] #test3.mp4
 
 # contador para los coches que cruzan la linea
 counter_cars = 0
