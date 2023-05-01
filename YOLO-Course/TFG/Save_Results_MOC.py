@@ -27,4 +27,4 @@ def porcentajeAcierto(total_OC):
     verdad_Pos = 72 # conteo manual
     falsos_Pos = abs(verdad_Pos-total_OC)
     precision = verdad_Pos / (verdad_Pos + falsos_Pos)
-    print(round(precision,2),'% de precision en conteo del modelo')
+    print(round(precision,2)*100,'% de precision en conteo del modelo')
